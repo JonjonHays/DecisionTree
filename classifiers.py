@@ -27,9 +27,8 @@ class DecisionTree:
     @staticmethod
     def entropy(y):
         """
-        TODO: implement a method that calculates the entropy given all the labels
+        Calculates the entropy given all the labels
         """
-#         print("entered!")
         classes = {}
         for c in y:
             if classes.get(c):
@@ -38,7 +37,6 @@ class DecisionTree:
                 classes[c] = 1
         entropy = 0
         n = len(y)
-        print(n)
         for c in classes.keys():
             p = classes[c] / n
             surprise = -np.log2(p)
@@ -51,8 +49,14 @@ class DecisionTree:
         Calculates information gain given a feature vector
         (i.e, a column of the design matrix) and a split threshold
         """
+        H = DecisionTree.entropy(y)
         
-        return 0
+        Sl = [y[i] for i in range(len(y)) if X[i] < thresh]
+        Sr = [y[i] for i in range(len(y)) if X[i] >= thresh]
+        H_after = ((len(Sl) * DecisionTree.entropy(Sl) + len(Sr) * DecisionTree.entropy(Sr)) 
+                    / (len(Sl) + len(Sr)))
+        
+        return H - H_after
 
     @staticmethod
     def gini_impurity(y):
