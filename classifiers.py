@@ -29,7 +29,7 @@ class DecisionTree:
         """
         TODO: implement a method that calculates the entropy given all the labels
         """
-        print("entered!")
+#         print("entered!")
         classes = {}
         for c in y:
             if classes.get(c):
@@ -37,7 +37,8 @@ class DecisionTree:
             else:
                 classes[c] = 1
         entropy = 0
-        n = len(classes.keys())
+        n = len(y)
+        print(n)
         for c in classes.keys():
             p = classes[c] / n
             surprise = -np.log2(p)
@@ -47,9 +48,10 @@ class DecisionTree:
     @staticmethod
     def information_gain(X, y, thresh):
         """
-        TODO: implement a method that calculates information gain given a vector of features
-        and a split threshold
+        Calculates information gain given a feature vector
+        (i.e, a column of the design matrix) and a split threshold
         """
+        
         return 0
 
     @staticmethod
