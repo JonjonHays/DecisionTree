@@ -85,6 +85,10 @@ class DecisionTree:
         I_after = ((len(Sl) * DecisionTree.gini_impurity(Sl) + len(Sr) * DecisionTree.gini_impurity(Sr)) 
                     / len(y))
         return I - I_after
+    
+    @staticmethod
+    def accuracy(y_pred, y_test):
+        return sum(y_pred == y_test) / len(y_pred)
 
     def split(self, X, y, idx, thresh):
         """
@@ -95,7 +99,7 @@ class DecisionTree:
         r_mask = ~l_mask
         return X[l_mask], y[l_mask], X[r_mask], y[r_mask]
     
-    def segmenter(self, X, y):
+    def segmenter(self, X, y, max_thresh=10):
         """
         Computes entropy gain for all single-dimension splits,
         return the feature and the threshold for the split that
@@ -109,6 +113,8 @@ class DecisionTree:
         for i, x in enumerate(X.T):
             # Iterate through each unique feature value
             thresh_vals = np.unique(x)
+            if len(thresh_vals) > max_thresh:
+                thresh_vals = np.linspace(min(thresh_vals), max(thresh_vals), max_thresh)
             for thresh in thresh_vals:
                 gain = DecisionTree.information_gain(x, y, thresh)
                 if gain > max_gain:
@@ -172,6 +178,34 @@ class DecisionTree:
                     node = node.right
             y_pred.append(node.label)
         return y_pred
+    
+    
+    def predict_trace(self, x, feature_names=None, label_names=None):
+        """
+        Predict the label of a sample point, and trace the decisions
+        made to reach the final prediction
+        """
+        node = self.root
+        while not node.is_leaf:
+            if feature_names is None:
+                name = str(node.split_rule[0])
+            else:
+                name = feature_names[node.split_rule[0]]
+            if x[node.split_rule[0]] < node.split_rule[1]:
+                print("\'" + name + "\'" + " < " + str(node.split_rule[1]))
+                node = node.left
+            else:
+                print("\'" + name + "\'" + " >= " + str(node.split_rule[1]))
+                node = node.right
+        if label_names is not None:
+            lname = label_names[node.label]
+        else:
+            lname = str(node.label)
+        print("Therefore this email is " + lname)
+        y_pred = node.label
+#         return y_pred
+    
+        
     
     def tree_repr(self, node, level):
         if node is None:
