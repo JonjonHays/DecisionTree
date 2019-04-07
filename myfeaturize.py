@@ -64,7 +64,7 @@ Y = [1]*len(spam_filenames) + [0]*len(ham_filenames)
 file_dict = {}
 file_dict['training_data'] = X
 file_dict['training_labels'] = Y
-file_dict['test_data'] = test_design_matrix
+file_dict['test_data'] = test_design_matrix.toarray()
 scipy.io.savemat('spam_data_BoW.mat', file_dict)
 
 print(vectorizer.get_feature_names())
