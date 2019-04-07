@@ -132,12 +132,12 @@ class DecisionTree:
         return Counter(node.y).most_common(1)[0][0]
         
     
-    def build_tree(self, node):
+    def build_tree(self, node, max_thresh=10):
         if len(node.X) == 1 or self.stop(node):
             node.is_leaf = True
             node.label = self.compute_label(node)
             return
-        node.split_rule = self.segmenter(node.X, node.y)
+        node.split_rule = self.segmenter(node.X, node.y, max_thresh=max_thresh)
         Xleft, yleft, Xright, yright = self.split(node.X, node.y, node.split_rule[0], node.split_rule[1])
         # If best split doesn't yield any separation, end recursion
         if len(yleft) == 0 or len(yright) == 0:
@@ -150,19 +150,22 @@ class DecisionTree:
             self.build_tree(node.right)
             
         
-    def fit(self, X, y, n_min=5, d_max=3):
+    def fit(self, X, y, n_min=5, d_max=3, max_thresh=10, m=None):
         """
         fits the model to a training set. ...stopping criteria
         """
         # clear tree first, allows re-fitting
         self.root.left, self.root.right = None, None
-        self.root.X = X
+        if m is not None:
+            rand_indcs = np.random.choice(range(X.shape[1]), m) 
+            self.root.X = X[:,rand_indcs]
+        else:
+            self.root.X = X
         self.root.y = y
         self.n_min = n_min
         self.d_max = d_max
-        self.build_tree(self.root)
-        
-#         return 0
+        self.build_tree(self.root, max_thresh=max_thresh)
+
 
     def predict(self, X):
         """
@@ -238,20 +241,37 @@ class DecisionTree:
 
 class RandomForest():
     
-    def __init__(self):
-        """
-        TODO: initialization of a random forest
-        """
+    def __init__(self, random_seed=13):
+        np.random.seed(random_seed)
+        self.trees = []
 
-    def fit(self, X, y):
+    def fit(self, X, y, n_trees=10, m=None, random_seed=13, n_min=5, d_max=3, max_thresh=10):
         """
-        TODO: fit the model to a training set.
+        Fit the model to a training set.
         """
-        return 0
+        if m is None:
+            m = np.floor(np.sqrt(X.shape[1]))
+        for _ in range(n_trees):
+            d = DecisionTree()
+            # Sample n points with replacement to yield subsample n' 
+            rand_indcs = np.random.choice(range(X.shape[0]), X.shape[0])
+            Xsub = X[rand_indcs]
+            ysub = y[rand_indcs]
+            d.fit(Xsub, ysub, n_min=n_min, d_max=d_max, max_thresh=max_thresh, m=m)
+            self.trees.append(d)
     
     def predict(self, X):
         """
         TODO: predict the labels for input data 
         """
+        y_preds = []
+        for tree in self.trees:
+            y_preds.append(tree.predict(X))
+        y_pred = []
+#         for i in range(len(y_preds)):
+#             y_pred[i] = 
+            
+            
+            
         return 0
 
