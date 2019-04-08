@@ -20,6 +20,11 @@ class Node:
         self.split_rule = split_rule
         self.X = X
         self.y = y
+        
+    def to_string(self, feature_names):
+        if self.is_leaf:
+            return "label = " + str(self.label)
+        return feature_names[self.split_rule[0]] + ": " + str(self.split_rule)
 
 
 class DecisionTree:
@@ -99,7 +104,7 @@ class DecisionTree:
         r_mask = ~l_mask
         return X[l_mask], y[l_mask], X[r_mask], y[r_mask]
     
-    def segmenter(self, X, y, max_thresh=10):
+    def segmenter(self, X, y):
         """
         Computes entropy gain for all single-dimension splits,
         return the feature and the threshold for the split that
@@ -109,12 +114,17 @@ class DecisionTree:
         split_idx = 0 
         split_thresh = X.T[0][0]
         max_gain = 0
+        if self.m is not None:
+            feature_indcs = np.random.choice(range(X.shape[1]), self.m, replace=False) 
+        else:
+            feature_indcs = range(X.shape[1])
         # Iterate through each feature
-        for i, x in enumerate(X.T):
+        for i in feature_indcs:
+            x = X[:,i]
             # Iterate through each unique feature value
             thresh_vals = np.unique(x)
-            if len(thresh_vals) > max_thresh:
-                thresh_vals = np.linspace(min(thresh_vals), max(thresh_vals), max_thresh)
+            if len(thresh_vals) > self.max_thresh:
+                thresh_vals = np.linspace(min(thresh_vals), max(thresh_vals), self.max_thresh)
             for thresh in thresh_vals:
                 gain = DecisionTree.information_gain(x, y, thresh)
                 if gain > max_gain:
@@ -131,13 +141,12 @@ class DecisionTree:
     def compute_label(self, node):
         return Counter(node.y).most_common(1)[0][0]
         
-    
     def build_tree(self, node, max_thresh=10):
         if len(node.X) == 1 or self.stop(node):
             node.is_leaf = True
             node.label = self.compute_label(node)
             return
-        node.split_rule = self.segmenter(node.X, node.y, max_thresh=max_thresh)
+        node.split_rule = self.segmenter(node.X, node.y)
         Xleft, yleft, Xright, yright = self.split(node.X, node.y, node.split_rule[0], node.split_rule[1])
         # If best split doesn't yield any separation, end recursion
         if len(yleft) == 0 or len(yright) == 0:
@@ -156,15 +165,13 @@ class DecisionTree:
         """
         # clear tree first, allows re-fitting
         self.root.left, self.root.right = None, None
-#         if m is not None:
-#             rand_indcs = np.random.choice(range(X.shape[1]), m, replace=False) 
-#             self.root.X = X[:,rand_indcs]
-#         else:
         self.root.X = X
         self.root.y = y
         self.purity_max = purity_max
         self.d_max = d_max
-        self.build_tree(self.root, max_thresh=max_thresh)
+        self.max_thresh = max_thresh
+        self.m = m
+        self.build_tree(self.root)
 
 
     def predict(self, X):
@@ -206,7 +213,6 @@ class DecisionTree:
             lname = str(node.label)
         print("Therefore this email is " + lname)
         y_pred = node.label
-#         return y_pred
     
         
     
@@ -220,6 +226,17 @@ class DecisionTree:
             right = self.tree_repr(node.right, level + 1)
             return "\t"*level+str(node.split_rule)+"\n" + left + right
 #             return "\t"*level+repr(node.label)+"\n" + left + right
+
+    def print_tree(self, root, feature_names, indent=0):
+        """
+        Print a representation of the decision tree
+        """
+        if root is None:
+            return
+        print('    ' * indent + root.to_string(feature_names))
+        for node in [root.left, root.right]: 
+            self.print_tree(node, feature_names, indent + 1)
+
 
     def __repr__(self):
         """
@@ -263,8 +280,6 @@ class RandomForest():
             ysub = y[rand_indcs]
             d.fit(Xsub, ysub, purity_max=purity_max, d_max=d_max, max_thresh=max_thresh, m=m)
             self.trees.append(d)
-        # TODO: remove return statement
-        return Xsub, ysub
     
     def predict(self, X):
         """
@@ -277,31 +292,7 @@ class RandomForest():
         y_pred = []
         for i in range(y_preds.shape[1]):
             y_pred.append(Counter(y_preds[:,i]).most_common(1)[0][0]) 
-        return y_pred, y_preds
+        return y_pred
     
-    
-    
-    
-#     def print_tree(t, indent=0):
-#     """Print a representation of this tree in which each node is
-#     indented by two spaces times its depth from the root.
-
-#     >>> print_tree(tree(1))
-#     1
-#     >>> print_tree(tree(1, [tree(2)]))
-#     1
-#       2
-#     >>> print_tree(numbers)
-#     1
-#       2
-#       3
-#         4
-#         5
-#       6
-#         7
-#     """
-#     print('  ' * indent + str(root(t)))
-#     for branch in branches(t):
-#         print_tree(branch, indent + 1)
 
 
