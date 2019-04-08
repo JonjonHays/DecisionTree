@@ -124,7 +124,7 @@ class DecisionTree:
         return split_idx, split_thresh
     
     def stop(self, node):
-        if len(node.y) <= self.n_min or node.depth > self.d_max:
+        if len(node.y) <= self.purity_max or node.depth > self.d_max:
             return True
         return False
     
@@ -150,26 +150,26 @@ class DecisionTree:
             self.build_tree(node.right)
             
         
-    def fit(self, X, y, n_min=5, d_max=3, max_thresh=10, m=None):
+    def fit(self, X, y, purity_max=5, d_max=3, max_thresh=10, m=None):
         """
         fits the model to a training set. ...stopping criteria
         """
         # clear tree first, allows re-fitting
         self.root.left, self.root.right = None, None
-        if m is not None:
-            rand_indcs = np.random.choice(range(X.shape[1]), m) 
-            self.root.X = X[:,rand_indcs]
-        else:
-            self.root.X = X
+#         if m is not None:
+#             rand_indcs = np.random.choice(range(X.shape[1]), m, replace=False) 
+#             self.root.X = X[:,rand_indcs]
+#         else:
+        self.root.X = X
         self.root.y = y
-        self.n_min = n_min
+        self.purity_max = purity_max
         self.d_max = d_max
         self.build_tree(self.root, max_thresh=max_thresh)
 
 
     def predict(self, X):
         """
-        TODO: predict the labels for input data 
+        predict the labels for input data 
         """
         y_pred = []
         for x in X:
@@ -245,20 +245,26 @@ class RandomForest():
         np.random.seed(random_seed)
         self.trees = []
 
-    def fit(self, X, y, n_trees=10, m=None, random_seed=13, n_min=5, d_max=3, max_thresh=10):
+    def fit(self, X, y, n_trees=10, n_samples=None, m=None, purity_max=5, d_max=3, max_thresh=10):
         """
         Fit the model to a training set.
         """
         if m is None:
-            m = np.floor(np.sqrt(X.shape[1]))
+            m = int(np.sqrt(X.shape[1]))
+        if m > X.shape[1]:
+            m = X.shape[1]
+        if n_samples is None:
+            n_samples = X.shape[0]
         for _ in range(n_trees):
             d = DecisionTree()
             # Sample n points with replacement to yield subsample n' 
-            rand_indcs = np.random.choice(range(X.shape[0]), X.shape[0])
+            rand_indcs = np.random.choice(range(X.shape[0]), n_samples, replace=True)
             Xsub = X[rand_indcs]
             ysub = y[rand_indcs]
-            d.fit(Xsub, ysub, n_min=n_min, d_max=d_max, max_thresh=max_thresh, m=m)
+            d.fit(Xsub, ysub, purity_max=purity_max, d_max=d_max, max_thresh=max_thresh, m=m)
             self.trees.append(d)
+        # TODO: remove return statement
+        return Xsub, ysub
     
     def predict(self, X):
         """
@@ -267,11 +273,35 @@ class RandomForest():
         y_preds = []
         for tree in self.trees:
             y_preds.append(tree.predict(X))
+        y_preds = np.array(y_preds)
         y_pred = []
-#         for i in range(len(y_preds)):
-#             y_pred[i] = 
-            
-            
-            
-        return 0
+        for i in range(y_preds.shape[1]):
+            y_pred.append(Counter(y_preds[:,i]).most_common(1)[0][0]) 
+        return y_pred, y_preds
+    
+    
+    
+    
+#     def print_tree(t, indent=0):
+#     """Print a representation of this tree in which each node is
+#     indented by two spaces times its depth from the root.
+
+#     >>> print_tree(tree(1))
+#     1
+#     >>> print_tree(tree(1, [tree(2)]))
+#     1
+#       2
+#     >>> print_tree(numbers)
+#     1
+#       2
+#       3
+#         4
+#         5
+#       6
+#         7
+#     """
+#     print('  ' * indent + str(root(t)))
+#     for branch in branches(t):
+#         print_tree(branch, indent + 1)
+
 
