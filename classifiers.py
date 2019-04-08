@@ -214,19 +214,6 @@ class DecisionTree:
         print("Therefore this email is " + lname)
         y_pred = node.label
     
-        
-    
-    def tree_repr(self, node, level):
-        if node is None:
-            return None
-        elif node.is_leaf:
-            return "\t"*level+"label: "+str(node.label)+"\n"
-        else:
-            left = self.tree_repr(node.left, level + 1)
-            right = self.tree_repr(node.right, level + 1)
-            return "\t"*level+str(node.split_rule)+"\n" + left + right
-#             return "\t"*level+repr(node.label)+"\n" + left + right
-
     def print_tree(self, root, feature_names, indent=0):
         """
         Print a representation of the decision tree
@@ -236,23 +223,6 @@ class DecisionTree:
         print('    ' * indent + root.to_string(feature_names))
         for node in [root.left, root.right]: 
             self.print_tree(node, feature_names, indent + 1)
-
-
-    def __repr__(self):
-        """
-        TODO: one way to visualize the decision tree is to write out a __repr__ method
-        that returns the string representation of a tree. Think about how to visualize 
-        a tree structure. You might have seen this before in CS61A.
-        """
-#         ret = "\t"+repr(self.root)+"\n"
-        #TODO: write __repr__ for Node class
-        assert(self.root.split_rule != None)
-        ret = "\t"+str(self.root.split_rule)+"\n"
-        ret += self.tree_repr(self.root.left, 2) + "left"
-        ret += self.tree_repr(self.root.right, 2) + "right"
-        return ret
-    
-
         
 
 
